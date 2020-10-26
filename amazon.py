@@ -33,9 +33,12 @@ class MyWindow(QMainWindow):
 
     def getJsonFileData(self):
         """Do get the data from products file."""
+        print(args)
         args.file.seek(0)
-        self.data = self.savedData = ast.literal_eval(args.file.read())
-        logging.debug(f"getJsonFileData:: current data: {self.data}")
+        data = ast.literal_eval(args.file.read())
+        self.data = data
+        self.savedData = self.data.copy()
+        logging.debug(f"getJsonFileData:: current data: {self.savedData}")
 
     def saveData(self):
         """Do save the self.data in the products file."""
@@ -275,8 +278,8 @@ def init() -> argparse.Namespace:
         # see: https://docs.python.org/3/library/functions.html#open
         type=argparse.FileType("r+"),
         default=filenameDefault,
-        const=filenameDefault,
-        nargs="?",
+        # const=filenameDefault,
+        # nargs="?",
         help="file for product listings",
     )
     args = parser.parse_args()
@@ -288,9 +291,8 @@ def init() -> argparse.Namespace:
     logging.debug(f"init:: debug is set to: {args.debug}")
     logging.debug(f"init:: file is set to: {args.file.name}")
 
-    # get the file content
-    jsonData = ast.literal_eval(args.file.read())
-    logging.debug(f"init:: Initial state of file is: {jsonData}.")
+    # get the file content jsonData = ast.literal_eval(args.file.read())
+    # logging.debug(f"init:: Initial state of file is: {jsonData}.")
     return args
 
 
