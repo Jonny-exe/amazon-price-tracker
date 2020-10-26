@@ -56,6 +56,7 @@ class MyWindow(QMainWindow):
         self.widthButton = 600
         self.errorMesagge = "Too many requests, try again in 15 mins"
         self.args = args
+        self.icon = '/home/a/'
 
     def initUI(self):
         """Do initial setup."""
@@ -111,13 +112,16 @@ class MyWindow(QMainWindow):
                 continue
 
             try:
-                bigger = self.whichIsMoreExpensive(
-                    newdata[url], self.savedData[url]
-                )
-                logging.debug(f"addLabel:: Which is bigger {bigger}")
-                logging.debug(
-                    f"addLabel:: {self.data[url]} vs {self.savedData[url]}"
-                )
+                if url in self.savedData:
+                    bigger = self.whichIsMoreExpensive(
+                        newdata[url], self.savedData[url]
+                    )
+                    logging.debug(f"addLabel:: Which is bigger {bigger}")
+                    logging.debug(
+                        f"addLabel:: {newdata[url]} vs {self.savedData[url]}"
+                    )
+                else:
+                    bigger = 0
             except ValueError:  # catch *all* exceptions
                 e = sys.exc_info()[0]
                 logging.error(
@@ -129,7 +133,8 @@ class MyWindow(QMainWindow):
             # Create the label
             newLabel = QtWidgets.QLabel(self)
             newLabel.setText(
-                f"Product {(self.productsIndex+1)}:{newdata[url]}€\n{shortUrl}"
+                f"Product {(self.productsIndex+1)}: "
+                f"{newdata[url]}€\n{shortUrl}"
             )
             newLabel.move(self.width, self.height)
             newLabel.adjustSize()
