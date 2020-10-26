@@ -1,6 +1,7 @@
 import ast
 import json
 import sys
+
 import bs4 as bs
 
 a = open("test.json", "r")
@@ -18,14 +19,9 @@ def readTxtFile():
 
 
 def readJsonFile():
-    w = open("test.json", "rw")
+    w = open("products.json", "r")
     jsonData = ast.literal_eval(w.read())
     print(jsonData)
-    jsonData["hi"] = "I am good thanks"
-    jsonData["lololololololo"] = "I am good to thanks"
-    print(jsonData)
-    string = str(jsonData)
-    w.write(string)
     w.close()
 
 

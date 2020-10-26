@@ -1,7 +1,7 @@
 #!/usr/bin/python3
+"""Do the necessary imports."""
 import argparse
 import ast
-import json
 import logging
 import signal
 import sys
@@ -9,7 +9,7 @@ import urllib.request
 from functools import partial
 
 import bs4 as bs
-from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtWidgets
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
@@ -18,7 +18,10 @@ filenameDefault = "products.json"
 
 
 class MyWindow(QMainWindow):
+    """Do the window."""
+
     def __init__(self, args):
+        """Do initialize the class functions."""
         super(MyWindow, self).__init__()
         self.newVars()
         self.getJsonFileData()
@@ -29,20 +32,22 @@ class MyWindow(QMainWindow):
         self.initLabels()
 
     def getJsonFileData(self):
+        """Do get the data from products file."""
         args.file.seek(0)
         self.data = self.savedData = ast.literal_eval(args.file.read())
         logging.debug(f"getJsonFileData:: current data: {self.data}")
 
     def saveData(self):
+        """Do save the self.data in the products file."""
         newdata = str(self.data) + "\n"
         args.file.seek(0)
         args.file.truncate(args.file.write(newdata))
         args.file.flush()
         if args.debug:
-            logging.debug(f"saveData:: re-reading saved data:")
-            self.getJsonFileData()  # just for debugging, re-read it
+            logging.debug("saveData:: re-reading saved data:")
 
     def newVars(self):
+        """Do set initial vars."""
         self.height = 140
         self.width = 30
         self.widthButton = 600
@@ -50,6 +55,7 @@ class MyWindow(QMainWindow):
         self.args = args
 
     def initUI(self):
+        """Do initial setup."""
         height = 50
 
         # Create main label
@@ -73,15 +79,18 @@ class MyWindow(QMainWindow):
         self.input.resize(600, 30)
 
     def mainButtonClicked(self):
+        """Do the action after the add products button is clicked."""
         url = self.input.text()
         self.newValue(url)
-        self.checkValues()
+        self.checkCurretDataValue()
 
     def shortenUrl(self, url: str) -> str:
+        """Do the shorten the url to the product name."""
         url = url.split("/")
         return url[3]
 
     def initLabels(self):
+        """Do the initial labels."""
         self.products = []
         self.closeButtons = []
         self.productsIndex = 0
@@ -90,6 +99,7 @@ class MyWindow(QMainWindow):
         self.addLabel(self.data)
 
     def addLabel(self, newdata):
+        """Do the add label when the add label is called."""
         colorGreen = "background-color: lightgreen"
         colorRed = "background-color: red"
         for url in newdata:
@@ -98,21 +108,25 @@ class MyWindow(QMainWindow):
                 continue
 
             try:
-                bigger = self.whichIsMoreExpensive(self.data[url], self.savedData[url])
+                bigger = self.whichIsMoreExpensive(
+                    newdata[url], self.savedData[url]
+                )
                 logging.debug(f"addLabel:: Which is bigger {bigger}")
                 logging.debug(
-                    f"addLabel:: price {self.data[url]} vs. {self.savedData[url]}"
+                    f"addLabel:: {self.data[url]} vs {self.savedData[url]}"
                 )
-            except:  # catch *all* exceptions
+            except ValueError:  # catch *all* exceptions
                 e = sys.exc_info()[0]
-                logging.error(f"addLabel:: Caught exception\n{e}\n{url}\n{self.data}.")
+                logging.error(
+                    f"addLabel:: Caught exception\n{e}\n{url}\n{self.data}."
+                )
 
             shortUrl = self.shortenUrl(url)
 
             # Create the label
             newLabel = QtWidgets.QLabel(self)
             newLabel.setText(
-                f"Product {(self.productsIndex+1)}: {newdata[url]}€\n{shortUrl}"
+                f"Product {(self.productsIndex+1)}:{newdata[url]}€\n{shortUrl}"
             )
             newLabel.move(self.width, self.height)
             newLabel.adjustSize()
@@ -128,7 +142,8 @@ class MyWindow(QMainWindow):
             newButton = QtWidgets.QPushButton(self)
             newButton.setText("⨉")
             removeFunction = partial(
-                self.removeProduct, newLabel, newButton, self.productsIndex, False, url
+                self.removeProduct, newLabel, newButton,
+                self.productsIndex, False, url
             )
             newButton.setGeometry(self.widthButton, self.height, 30, 25)
             newButton.clicked.connect(removeFunction)
@@ -143,9 +158,11 @@ class MyWindow(QMainWindow):
             self.productsIndex += 1
 
     def removeProduct(self, label, button, index, checked, url):
+        """Do remove products when the x button is pressed."""
         logging.debug(f"removeProduct:: {self}")
         logging.debug(
-            f"self: {self}, button: {type(button)} {button}, index: {index}, checked: {type(checked)}"
+            f"self: {self}, button: {type(button)} {button}, index: {index},",
+            f"checked: {type(checked)}"
         )
         logging.debug(f"winid is {button.winId()}")
 
@@ -159,6 +176,7 @@ class MyWindow(QMainWindow):
         self.replaceProducts(index)
 
     def replaceProducts(self, productIndex: int):
+        """Do replaces the products in the correct spot."""
         for index in range(productIndex, len(self.products)):
             label = self.products[index]
             button = self.closeButtons[index]
@@ -169,9 +187,12 @@ class MyWindow(QMainWindow):
             self.height -= self.productsSpaceDiference
 
             label.move(self.width, yPosLabel - self.productsSpaceDiference)
-            button.move(self.widthButton, yPosButton - self.productsSpaceDiference)
+            button.move(
+                self.widthButton, yPosButton - self.productsSpaceDiference
+            )
 
     def newValue(self, url: str):
+        """Do the new value after the add product button is pressed."""
         price = str(getPrice(url))
         newdata = {}
         if url not in self.data:
@@ -180,6 +201,7 @@ class MyWindow(QMainWindow):
         self.data[url] = price
 
     def whichIsMoreExpensive(self, price1: str, price2: str) -> int:
+        """Do the which is more expensiv from the arguments."""
         try:
             price1 = price1.replace(",", ".")
             price2 = price2.replace(",", ".")
@@ -193,11 +215,12 @@ class MyWindow(QMainWindow):
                 return -1
             return 0
             # If they are the same return -1
-        except:
+        except ValueError:
             # If the input is a value you cant float
             return 0
 
     def checkCurretDataValue(self):
+        """Do the check on the products in data if the price is correct."""
         jsonData = self.data.copy()
         for url in jsonData:
             if self.data[url] == "Deleted":
@@ -206,11 +229,11 @@ class MyWindow(QMainWindow):
             price = getPrice(url)
             if price != self.data[url]:
                 self.data[url] = price
-                jsonString = str(self.data)
         self.saveData()
 
 
 def window(args):
+    """Do the initialize the window."""
     app = QApplication([])
     win = MyWindow(args)
     win.show()
@@ -218,20 +241,22 @@ def window(args):
 
 
 def getPrice(url) -> str:
+    """Do the get price on the url thats passed as an argument."""
     try:
         sauce = urllib.request.urlopen(url)
         soup = bs.BeautifulSoup(sauce, "lxml")
         search = soup.find("span", {"id": "priceblock_ourprice"})
         tag = search.text
-        tag = tag[0 : len(tag) - 2]
+        tag = tag[0: len(tag) - 2]
         logging.debug(tag)
-    except:
+    except HTTPError:
         logging.debug("except ocurred")
         tag = "Too many requests, try again in 15 mins"
     return tag
 
 
 def init() -> argparse.Namespace:
+    """Do the file init."""
     signal.signal(signal.SIGINT, signal.SIG_DFL)
     # Argparse
     parser = argparse.ArgumentParser(description="Track amazon prices")
@@ -245,7 +270,8 @@ def init() -> argparse.Namespace:
     parser.add_argument(
         "-f",
         "--file",
-        # r...read, w...write, +...update(read and write), t...text mode, b...binary
+        # r...read, w...write, +...update(read and write),
+        # t...text mode, b...binary
         # see: https://docs.python.org/3/library/functions.html#open
         type=argparse.FileType("r+"),
         default=filenameDefault,
@@ -273,7 +299,7 @@ try:
     window(args)
     args.file.close()
 except KeyboardInterrupt:
-    logging.debug(f"Received keyboard interrupt.")
+    logging.debug("Received keyboard interrupt.")
     raise
     sys.exit()
 except Exception as e:
