@@ -21,17 +21,17 @@ class MyWindow(QMainWindow):
     def __init__(self, args):
         super(MyWindow, self).__init__()
         self.newVars()
-        self.getData()
+        self.getJsonFileData()
         self.setGeometry(1000, 1600, 900, 900)
-        self.setWindowTitle("Products")
+        self.setWindowTitle("Track amazon products")
         self.initUI()
-        self.checkValues()
+        self.checkCurretDataValue()
         self.initLabels()
 
-    def getData(self):
+    def getJsonFileData(self):
         args.file.seek(0)
         self.data = self.savedData = ast.literal_eval(args.file.read())
-        logging.debug(f"getData:: current data: {self.data}")
+        logging.debug(f"getJsonFileData:: current data: {self.data}")
 
     def saveData(self):
         newdata = str(self.data) + "\n"
@@ -40,7 +40,7 @@ class MyWindow(QMainWindow):
         args.file.flush()
         if args.debug:
             logging.debug(f"saveData:: re-reading saved data:")
-            self.getData()  # just for debugging, re-read it
+            self.getJsonFileData()  # just for debugging, re-read it
 
     def newVars(self):
         self.height = 140
@@ -53,27 +53,26 @@ class MyWindow(QMainWindow):
         height = 50
 
         # Create main label
-        self.label = []
-        self.label.append(QtWidgets.QLabel(self))
+        label = QtWidgets.QLabel(self)
         # self.label[0].setStyleSheet("background-color: red")
-        self.label[0].setText("Introduce the link of the product you want to track")
-        self.label[0].setFont(QFont("Ubuntu", 15))
-        self.label[0].move(self.width, height - 35)
-        self.label[0].adjustSize()
+        label.setText("Introduce the link of the product you want to track")
+        label.setFont(QFont("Ubuntu", 15))
+        label.move(self.width, height - 35)
+        label.adjustSize()
 
         # Create main button
-        self.b1 = QtWidgets.QPushButton(self)
-        self.b1.setText("Add product")
-        self.b1.setGeometry(650, height, 100, 30)
-        self.b1.move(650, height)
-        self.b1.clicked.connect(self.click)
+        b1 = QtWidgets.QPushButton(self)
+        b1.setText("Add product")
+        b1.setGeometry(650, height, 100, 30)
+        b1.move(650, height)
+        b1.clicked.connect(self.mainButtonClicked)
 
         # Create main input
         self.input = QtWidgets.QLineEdit(self)
         self.input.move(self.width, height)
         self.input.resize(600, 30)
 
-    def click(self):
+    def mainButtonClicked(self):
         url = self.input.text()
         self.newValue(url)
         self.checkValues()
@@ -81,9 +80,6 @@ class MyWindow(QMainWindow):
     def shortenUrl(self, url: str) -> str:
         url = url.split("/")
         return url[3]
-
-    def update(self, i: int):
-        self.products[i].adjustSize()
 
     def initLabels(self):
         self.products = []
@@ -112,6 +108,7 @@ class MyWindow(QMainWindow):
                 logging.error(f"addLabel:: Caught exception\n{e}\n{url}\n{self.data}.")
 
             shortUrl = self.shortenUrl(url)
+
             # Create the label
             newLabel = QtWidgets.QLabel(self)
             newLabel.setText(
@@ -120,9 +117,9 @@ class MyWindow(QMainWindow):
             newLabel.move(self.width, self.height)
             newLabel.adjustSize()
             if bigger > 0:
-                newLabel.setStyleSheet(colorGreen)
-            elif bigger < 0:
                 newLabel.setStyleSheet(colorRed)
+            elif bigger < 0:
+                newLabel.setStyleSheet(colorGreen)
             elif bigger == 0:
                 newLabel.setStyleSheet("background-color: lightblue")
             self.products.append(newLabel)
@@ -200,7 +197,7 @@ class MyWindow(QMainWindow):
             # If the input is a value you cant float
             return 0
 
-    def checkValues(self):
+    def checkCurretDataValue(self):
         jsonData = self.data.copy()
         for url in jsonData:
             if self.data[url] == "Deleted":
