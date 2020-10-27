@@ -10,18 +10,17 @@ from functools import partial
 
 import bs4 as bs
 from PyQt5 import QtWidgets
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
+from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import QApplication, QMainWindow
 
 filenameDefault = "products.json"
 
 
 class MyWindow(QMainWindow):
-    """Do the window."""
+    """Handle GUI for Amazon price tracking."""
 
     def __init__(self, args):
-        """Do initialize the class functions."""
+        """Initialize the class functions."""
         super(MyWindow, self).__init__()
         self.newVars()
         self.getJsonFileData()
@@ -32,7 +31,7 @@ class MyWindow(QMainWindow):
         self.initLabels()
 
     def getJsonFileData(self):
-        """Do get the data from products file."""
+        """Get the data from products file."""
         print(args)
         args.file.seek(0)
         data = ast.literal_eval(args.file.read())
@@ -41,7 +40,7 @@ class MyWindow(QMainWindow):
         logging.debug(f"getJsonFileData:: current data: {self.savedData}")
 
     def saveData(self):
-        """Do save the self.data in the products file."""
+        """Save the self.data in the products file."""
         newdata = str(self.data) + "\n"
         args.file.seek(0)
         args.file.truncate(args.file.write(newdata))
@@ -50,16 +49,16 @@ class MyWindow(QMainWindow):
             logging.debug("saveData:: re-reading saved data:")
 
     def newVars(self):
-        """Do set initial vars."""
+        """Set initial vars."""
         self.height = 140
         self.width = 30
         self.widthButton = 600
         self.errorMesagge = "Too many requests, try again in 15 mins"
         self.args = args
-        self.icon = '/home/a/'
+        self.icon = "/home/a/"
 
     def initUI(self):
-        """Do initial setup."""
+        """Perform initial setup."""
         height = 50
 
         # Create main label
@@ -89,12 +88,12 @@ class MyWindow(QMainWindow):
         self.checkCurretDataValue()
 
     def shortenUrl(self, url: str) -> str:
-        """Do the shorten the url to the product name."""
+        """Shorten the URL to the product name."""
         url = url.split("/")
         return url[3]
 
     def initLabels(self):
-        """Do the initial labels."""
+        """Initialize labels."""
         self.products = []
         self.closeButtons = []
         self.productsIndex = 0
@@ -103,7 +102,7 @@ class MyWindow(QMainWindow):
         self.addLabel(self.data)
 
     def addLabel(self, newdata):
-        """Do the add label when the add label is called."""
+        """Add label when the add label is called."""
         colorGreen = "background-color: lightgreen"
         colorRed = "background-color: red"
         for url in newdata:
@@ -150,8 +149,12 @@ class MyWindow(QMainWindow):
             newButton = QtWidgets.QPushButton(self)
             newButton.setText("⨉")
             removeFunction = partial(
-                self.removeProduct, newLabel, newButton,
-                self.productsIndex, False, url
+                self.removeProduct,
+                newLabel,
+                newButton,
+                self.productsIndex,
+                False,
+                url,
             )
             newButton.setGeometry(self.widthButton, self.height, 30, 25)
             newButton.clicked.connect(removeFunction)
@@ -166,11 +169,11 @@ class MyWindow(QMainWindow):
             self.productsIndex += 1
 
     def removeProduct(self, label, button, index, checked, url):
-        """Do remove products when the x button is pressed."""
+        """Remove products when the x button is pressed."""
         logging.debug(f"removeProduct:: {self}")
         logging.debug(
             f"self: {self}, button: {type(button)} {button}, index: {index},",
-            f"checked: {type(checked)}"
+            f"checked: {type(checked)}",
         )
         logging.debug(f"winid is {button.winId()}")
 
@@ -184,7 +187,7 @@ class MyWindow(QMainWindow):
         self.replaceProducts(index)
 
     def replaceProducts(self, productIndex: int):
-        """Do replaces the products in the correct spot."""
+        """Replace the products in the correct spot."""
         for index in range(productIndex, len(self.products)):
             label = self.products[index]
             button = self.closeButtons[index]
@@ -200,7 +203,7 @@ class MyWindow(QMainWindow):
             )
 
     def newValue(self, url: str):
-        """Do the new value after the add product button is pressed."""
+        """Handle new value after the add product button is pressed."""
         price = str(getPrice(url))
         newdata = {}
         if url not in self.data:
@@ -209,7 +212,7 @@ class MyWindow(QMainWindow):
         self.data[url] = price
 
     def whichIsMoreExpensive(self, price1: str, price2: str) -> int:
-        """Do the which is more expensiv from the arguments."""
+        """Determine which is more expensive from the arguments."""
         try:
             price1 = price1.replace(",", ".")
             price2 = price2.replace(",", ".")
@@ -228,7 +231,7 @@ class MyWindow(QMainWindow):
             return 0
 
     def checkCurretDataValue(self):
-        """Do the check on the products in data if the price is correct."""
+        """Check the products in data if the price is correct."""
         jsonData = self.data.copy()
         for url in jsonData:
             if self.data[url] == "Deleted":
@@ -241,7 +244,7 @@ class MyWindow(QMainWindow):
 
 
 def window(args):
-    """Do the initialize the window."""
+    """Create the window and go into event loop."""
     app = QApplication([])
     win = MyWindow(args)
     win.show()
@@ -249,22 +252,26 @@ def window(args):
 
 
 def getPrice(url) -> str:
-    """Do the get price on the url thats passed as an argument."""
+    """Get price for the url thats passed as an argument."""
     try:
         sauce = urllib.request.urlopen(url)
         soup = bs.BeautifulSoup(sauce, "lxml")
         search = soup.find("span", {"id": "priceblock_ourprice"})
         tag = search.text
-        tag = tag[0: len(tag) - 2]
+        # pylama:ignore=E203
+        tag = tag[0 : len(tag) - 2]
         logging.debug(tag)
-    except HTTPError:
+    except urllib.request.HTTPError:
         logging.debug("except ocurred")
         tag = "Too many requests, try again in 15 mins"
     return tag
 
 
 def init() -> argparse.Namespace:
-    """Do the file init."""
+    """Initialize the program.
+
+    Process argument and open file.
+    """
     signal.signal(signal.SIGINT, signal.SIG_DFL)
     # Argparse
     parser = argparse.ArgumentParser(description="Track amazon prices")
@@ -301,6 +308,7 @@ def init() -> argparse.Namespace:
     return args
 
 
+# main
 try:
     args = init()
     window(args)
