@@ -2,18 +2,27 @@
 """Do the necessary imports."""
 import argparse
 import ast
+import datetime
 import logging
+import random
 import signal
+import sqlite3
 import sys
+import time
 import urllib.request
 from functools import partial
 
 import bs4 as bs
+import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
+from matplotlib import style
 from PyQt5 import QtWidgets
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QApplication, QMainWindow
 
 filenameDefault = "products.json"
+conn = sqlite3.connect('amazon.db')
+c = conn.cursor()
 
 
 class MyWindow(QMainWindow):
@@ -251,15 +260,36 @@ def window(args):
     sys.exit(app.exec())
 
 
+def create_table():
+    """Do creates a table."""
+    c.execute(
+        'CREATE TABLE IF NOT EXISTS amazon(url TEXT, price TEXT, datestamp TEXT, unix REAL, id INTEGER PRIMARY KEY AUTOINCREMENT,)'
+    )
+
+
+def accesData(url: str):
+    "Get the price that corresponds to the "
+    c.execute("SELECT price FROM amazon WHERE url = ?",
+              (url,)
+              )
+    data = c.fetchall()
+    for x in data:
+        print(x)
+
+
 def getPrice(url) -> str:
     """Get price for the url thats passed as an argument."""
     try:
         sauce = urllib.request.urlopen(url)
         soup = bs.BeautifulSoup(sauce, "lxml")
-        search = soup.find("span", {"id": "priceblock_ourprice"})
-        tag = search.text
+        try:
+            search = soup.find("span", {"id": "priceblock_dealprice"})
+            tag = search.text
+        except AttributeError:
+            search = soup.find("span", {"id": "priceblock_ourprice"})
+            tag = search.text
         # pylama:ignore=E203
-        tag = tag[0 : len(tag) - 2]
+        tag = tag[0: len(tag) - 2]
         logging.debug(tag)
     except urllib.request.HTTPError:
         logging.debug("except ocurred")
@@ -302,7 +332,7 @@ def init() -> argparse.Namespace:
     logging.debug(f"init:: args is set to: {args}")
     logging.debug(f"init:: debug is set to: {args.debug}")
     logging.debug(f"init:: file is set to: {args.file.name}")
-
+    create_table()
     # get the file content jsonData = ast.literal_eval(args.file.read())
     # logging.debug(f"init:: Initial state of file is: {jsonData}.")
     return args
